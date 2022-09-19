@@ -13,6 +13,7 @@ local QBCore = exports['qb-core']:GetCoreObject()
 
 local ReturnZone = nil
 local currentGar = nil
+local currentVeh = nil
 local garageJobBlips = {}
 --functions
 local function CrPed(model, coords)
@@ -184,6 +185,7 @@ local function CheckPlayers(vehicle)
             SetVehicleDoorsLocked(vehicle)
             Wait(1500)
             QBCore.Functions.DeleteVehicle(vehicle)
+            currentVeh = nil
         end
    end
 end
@@ -246,27 +248,31 @@ end)
 
 
 RegisterNetEvent('garageJob:client:TakeVehicle', function(data)
-    if not IsAnyVehicleNearPoint(data.spawnCoords.x, data.spawnCoords.y, data.spawnCoords.z, 5.0) then 
-        --print('99', json.encode(data))
-        --print('99', data.job)
-        QBCore.Functions.SpawnVehicle(data.model, function(veh)
-            if DoesEntityExist(veh) then
-                TriggerServerEvent('garageJob:server:TakeVehicle', data.plate)
-                SetVehicleNumberPlateText(veh, data.plate)
-                exports['LegacyFuel']:SetFuel(veh, data.fuel)
-                TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(veh))
-                SetCarItemsInfo(data.job)
-                if #Config.JobCarItems > 0 then
-                    TriggerServerEvent("inventory:server:addTrunkItems", QBCore.Functions.GetPlate(veh), Config.JobCarItems)
-                end
+    if currentVeh == nil then
+        if not IsAnyVehicleNearPoint(data.spawnCoords.x, data.spawnCoords.y, data.spawnCoords.z, 5.0) then 
+            --print('99', json.encode(data))
+            --print('99', data.job)
+            QBCore.Functions.SpawnVehicle(data.model, function(veh)
+                if DoesEntityExist(veh) then
+                    TriggerServerEvent('garageJob:server:TakeVehicle', data.plate)
+                    SetVehicleNumberPlateText(veh, data.plate)
+                    exports['LegacyFuel']:SetFuel(veh, data.fuel)
+                    TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(veh))
+                    SetCarItemsInfo(data.job)
+                    if #Config.JobCarItems > 0 then
+                        TriggerServerEvent("inventory:server:addTrunkItems", QBCore.Functions.GetPlate(veh), Config.JobCarItems)
+                    end
 
-                doCarDamage(veh, data)
-                createVehicleReturn(data.returnCoords, data.currentGarage)
-                currentGar = data.currentGarage
-            end
-        end, data.spawnCoords, false)
+                    doCarDamage(veh, data)
+                    createVehicleReturn(data.returnCoords, data.currentGarage)
+                    currentGar = data.currentGarage
+                end
+            end, data.spawnCoords, false)
+        else 
+            QBCore.Functions.Notify("ТС не может быть досталено, зона не свободна", "error", 5000)
+        end
     else 
-        QBCore.Functions.Notify("ТС не может быть досталено, зона не свободна", "error", 5000)
+        QBCore.Functions.Notify("Бобби говорит, что уже взяли ТС", "error", 5000)
     end
 end)
 
